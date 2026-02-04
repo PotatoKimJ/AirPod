@@ -48,6 +48,7 @@ function onGameEnd(result) {
 
 function getEmailBody() {
   const sideLabel = selectedSide === 'left' ? '왼쪽 이어폰' : '오른쪽 이어폰';
+  const modelLabel = MODEL_LABELS[selectedModel] || selectedModel;
   const winCount = gameResults.filter(r => r.result === '승리').length;
   const detail = gameResults.map(r => {
     const res = r.result === '승리' ? '승' : r.result === '패배' ? '패' : `점수${r.result}`;
@@ -56,6 +57,7 @@ function getEmailBody() {
   return `[한쪽씩 게임 결과 - 취합용]
 
 사용자 (${sideLabel} 걸고 참여)
+에어팟 기종: ${modelLabel}
 총 ${winCount}게임 승리 / 6게임 중
 
 상세 결과:
@@ -80,6 +82,7 @@ async function sendResultsEmail() {
         _subject: subject,
         _captcha: 'false',
         '이어폰': sideLabel,
+        '에어팟 기종': MODEL_LABELS[selectedModel] || selectedModel,
         '승리수': winCount,
         '결과': body
       })
@@ -116,7 +119,7 @@ function showFinalResults() {
     <div class="result-win">
       <div class="result-emoji">📋</div>
       <p class="result-text">전체 결과</p>
-      <p class="result-sub">${sideLabel} | 승 ${winCount} / 패 ${loseCount} (승률 ${winRate}%)</p>
+      <p class="result-sub">${sideLabel} | ${MODEL_LABELS[selectedModel] || selectedModel} | 승 ${winCount} / 패 ${loseCount} (승률 ${winRate}%)</p>
     </div>
     <div class="result-summary">${rowsHtml}</div>
     <div class="email-section">
@@ -136,6 +139,16 @@ function showFinalResults() {
 
 // ========== 상태 ==========
 let selectedSide = null;
+let selectedModel = '';
+
+const MODEL_LABELS = {
+  'airpods-1': 'AirPods (1세대)',
+  'airpods-2': 'AirPods (2세대)',
+  'airpods-3': 'AirPods (3세대)',
+  'airpods-pro-1': 'AirPods Pro (1세대)',
+  'airpods-pro-2-lightning': 'AirPods Pro (2세대, Lightning)',
+  'airpods-pro-2-usbc': 'AirPods Pro (2세대, USB-C)'
+};
 
 function init() {
   document.querySelectorAll('.bud-btn').forEach(btn => {
@@ -149,6 +162,12 @@ function init() {
   const startBtn = document.getElementById('start-all-btn');
   if (startBtn) startBtn.addEventListener('click', () => {
     if (!selectedSide) selectedSide = 'left';
+    const modelEl = document.getElementById('airpods-model');
+    selectedModel = modelEl?.value || '';
+    if (!selectedModel) {
+      alert('에어팟 기종을 선택해주세요!');
+      return;
+    }
     gameResults = [];
     currentGameIndex = 0;
     updateProgress();
