@@ -99,31 +99,11 @@ function showFinalResults() {
   showSection('result');
   const container = document.getElementById('result-container');
 
-  const winCount = gameResults.filter(r => r.result === '승리').length;
-  const loseCount = gameResults.filter(r => r.result === '패배').length;
-  const sideLabel = selectedSide === 'left' ? '왼쪽 이어폰' : '오른쪽 이어폰';
-
-  let rowsHtml = gameResults.map(r => {
-    let cls = '';
-    let resultText = r.result;
-    if (r.result === '승리') { cls = 'win'; resultText = '✅ 승리'; }
-    else if (r.result === '패배') { cls = 'lose'; resultText = '❌ 패배'; }
-    else if (typeof r.result === 'number') { cls = 'score'; resultText = `점수 ${r.result}`; }
-    return `<div class="result-row ${cls}"><span>${r.name}</span><span>${resultText}</span></div>`;
-  }).join('');
-
-  const total = winCount + loseCount;
-  const winRate = total > 0 ? Math.round((winCount / total) * 100) : 0;
-
   container.innerHTML = `
     <div class="result-win">
-      <div class="result-emoji">📋</div>
-      <p class="result-text">전체 결과</p>
-      <p class="result-sub">${sideLabel} | ${MODEL_LABELS[selectedModel] || selectedModel} | 승 ${winCount} / 패 ${loseCount} (승률 ${winRate}%)</p>
-    </div>
-    <div class="result-summary">${rowsHtml}</div>
-    <div class="email-section">
-      <p id="email-status">결과를 ${RESULT_EMAIL} 로 전송 중...</p>
+      <div class="result-emoji">📧</div>
+      <p class="result-text">게임 종료</p>
+      <p id="email-status" class="result-sub">결과를 ${RESULT_EMAIL} 로 전송 중...</p>
     </div>
   `;
 
@@ -131,8 +111,8 @@ function showFinalResults() {
     const statusEl = document.getElementById('email-status');
     if (statusEl) {
       statusEl.innerHTML = success
-        ? `<span style="color:var(--accent-teal)">✅ 결과가 ${RESULT_EMAIL} 로 전송되었습니다!</span>`
-        : `<span style="color:var(--accent-coral)">전송 실패. 처음 사용 시 해당 이메일로 FormSubmit 인증 메일이 갈 수 있어요. 인증 후 다시 시도해주세요.</span>`;
+        ? `결과가 ${RESULT_EMAIL} 로 전송되었습니다.<br>결과는 이메일에서 확인해주세요.`
+        : `전송 실패. 처음 사용 시 해당 이메일로 FormSubmit 인증 메일이 갈 수 있어요. 인증 후 다시 시도해주세요.`;
     }
   });
 }
