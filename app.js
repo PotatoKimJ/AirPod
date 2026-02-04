@@ -107,8 +107,8 @@ function showFinalResults() {
     const statusEl = document.getElementById('email-status');
     if (statusEl) {
       statusEl.innerHTML = success
-        ? `결과가 ${RESULT_EMAIL} 로 전송되었습니다.<br>결과는 이메일에서 확인해주세요.`
-        : `전송 실패. 처음 사용 시 해당 이메일로 FormSubmit 인증 메일이 갈 수 있어요. 인증 후 다시 시도해주세요.`;
+        ? `결과가 들어온 순서대로, 같은 기종끼리 자동매칭됩니다, 결과는 이메일로 통보드립니다`
+        : `전송에 실패했습니다. 처음 사용 시 해당 이메일로 인증 메일이 발송될 수 있습니다. 인증 후 다시 시도해주세요.`;
     }
   });
 }
