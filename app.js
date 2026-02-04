@@ -1,3 +1,7 @@
+// ========== 설정 ==========
+// Formspree 사용 시: https://formspree.io 에서 폼 생성 후 ID 입력
+const FORMSPREE_FORM_ID = ''; // 예: 'xrgweqab'
+
 // ========== 섹션 전환 ==========
 const sections = {
   landing: document.getElementById('landing'),
@@ -15,11 +19,11 @@ function showSection(name) {
 // ========== 연속 게임 플로우 ==========
 const GAME_ORDER = [
   { id: 'rps', name: '가위바위보' },
-  { id: 'tap', name: '탭 속도' },
-  { id: 'number', name: '숫자 맞추기' },
-  { id: 'rhythm', name: '리듬 탭' },
-  { id: 'quiz', name: '스테레오 퀴즈' },
-  { id: 'message', name: '비밀 메시지' }
+  { id: 'coin', name: '동전 던지기' },
+  { id: 'luckyNum', name: '행운 숫자' },
+  { id: 'luckyTap', name: '행운 탭' },
+  { id: 'roulette', name: '운 룰렛' },
+  { id: 'luckyCard', name: '운 카드' }
 ];
 
 let gameResults = [];
@@ -43,13 +47,33 @@ function onGameEnd(result) {
   }
 }
 
+function getEmailBody() {
+  const sideLabel = selectedSide === 'left' ? '왼쪽 이어폰' : '오른쪽 이어폰';
+  const winCount = gameResults.filter(r => r.result === '승리').length;
+  const detail = gameResults.map(r => {
+    const res = r.result === '승리' ? '승' : r.result === '패배' ? '패' : `점수${r.result}`;
+    return `  - ${r.name}: ${res}`;
+  }).join('\n');
+  return `[한쪽씩 게임 결과 - 취합용]
+
+사용자 (${sideLabel} 걸고 참여)
+총 ${winCount}게임 승리 / 6게임 중
+
+상세 결과:
+${detail}
+
+---
+이 결과를 모아 왼쪽 vs 오른쪽 승패를 가립니다.
+예) 사용자1(왼쪽) 3승 > 사용자2(오른쪽) 2승`;
+}
+
 function showFinalResults() {
   showSection('result');
   const container = document.getElementById('result-container');
 
   const winCount = gameResults.filter(r => r.result === '승리').length;
   const loseCount = gameResults.filter(r => r.result === '패배').length;
-  const scoreResults = gameResults.filter(r => typeof r.result === 'number');
+  const sideLabel = selectedSide === 'left' ? '왼쪽 이어폰' : '오른쪽 이어폰';
 
   let rowsHtml = gameResults.map(r => {
     let cls = '';
@@ -67,10 +91,54 @@ function showFinalResults() {
     <div class="result-win">
       <div class="result-emoji">📋</div>
       <p class="result-text">전체 결과</p>
-      <p class="result-sub">승 ${winCount} / 패 ${loseCount} (승률 ${winRate}%)</p>
+      <p class="result-sub">${sideLabel} | 승 ${winCount} / 패 ${loseCount} (승률 ${winRate}%)</p>
     </div>
     <div class="result-summary">${rowsHtml}</div>
+    <div class="email-section">
+      <h3>결과 이메일로 보내기 (취합용)</h3>
+      <p class="email-desc">받는 이메일 주소를 입력하고 전송하면, 상대 결과와 비교해 승패를 가릴 수 있어요.</p>
+      <input type="email" class="quiz-answer-input" id="email-to" placeholder="받는 이메일 주소">
+      <button class="quiz-submit" id="email-send-btn">이메일로 결과 보내기</button>
+      <p id="email-status" style="text-align:center;margin-top:0.5rem;font-size:0.9rem;color:var(--text-muted);"></p>
+    </div>
   `;
+
+  document.getElementById('email-send-btn').addEventListener('click', async () => {
+    const email = document.getElementById('email-to').value.trim();
+    const statusEl = document.getElementById('email-status');
+    if (!email) {
+      statusEl.textContent = '이메일 주소를 입력해주세요.';
+      return;
+    }
+
+    const body = getEmailBody();
+    const subject = `[한쪽씩] ${sideLabel} - ${winCount}게임 승리`;
+
+    if (FORMSPREE_FORM_ID) {
+      statusEl.textContent = '전송 중...';
+      try {
+        const res = await fetch(`https://formspree.io/f/${FORMSPREE_FORM_ID}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            _replyto: email,
+            _subject: subject,
+            이어폰: sideLabel,
+            승리수: winCount,
+            상세결과: body
+          })
+        });
+        if (res.ok) statusEl.innerHTML = '<span style="color:var(--accent-teal)">✅ 전송 완료!</span>';
+        else throw new Error();
+      } catch {
+        statusEl.innerHTML = '<span style="color:var(--accent-coral)">전송 실패. 아래 메일 보내기를 사용해주세요.</span>';
+      }
+    } else {
+      const mailto = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.location.href = mailto;
+      statusEl.innerHTML = '<span style="color:var(--accent-teal)">이메일 앱이 열렸어요. 전송 버튼을 눌러주세요.</span>';
+    }
+  });
 }
 
 // ========== 상태 ==========
@@ -116,32 +184,7 @@ if (document.readyState === 'loading') {
   init();
 }
 
-// ========== 오디오 ==========
-let audioCtx = null;
-function initAudio() {
-  if (audioCtx) return audioCtx;
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  return audioCtx;
-}
-function playTone(freq, duration, pan = 0, volume = 0.3) {
-  const ctx = initAudio();
-  const now = ctx.currentTime;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  const panner = ctx.createStereoPanner();
-  osc.type = 'sine';
-  osc.frequency.value = freq;
-  panner.pan.value = pan;
-  gain.gain.setValueAtTime(volume, now);
-  gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
-  osc.connect(gain);
-  gain.connect(panner);
-  panner.connect(ctx.destination);
-  osc.start(now);
-  osc.stop(now + duration);
-}
-
-// ========== 게임: 가위바위보 ==========
+// ========== 게임 1: 가위바위보 (운 기반 - 50%) ==========
 function runRpsGame() {
   const container = document.getElementById('game-container');
   let myScore = 0;
@@ -157,9 +200,9 @@ function runRpsGame() {
 
   function render() {
     container.innerHTML = `
-      <div class="game-title">✊✋✌️ 가위바위보 - 3판 2선승</div>
+      <div class="game-title">✊✋✌️ 가위바위보 (운)</div>
+      <p class="warning-banner">AI가 랜덤으로 냅니다. 3판 2선승!</p>
       <div class="rps-score"><span>나: ${myScore}</span><span>vs</span><span>AI: ${oppScore}</span></div>
-      <p style="text-align:center;margin-bottom:1rem;">선택하세요</p>
       <div class="rps-buttons">
         <button class="rps-btn" data-choice="rock">✊</button>
         <button class="rps-btn" data-choice="paper">✋</button>
@@ -188,239 +231,144 @@ function runRpsGame() {
   render();
 }
 
-// ========== 게임: 탭 속도 ==========
-function runTapGame() {
+// ========== 게임 2: 동전 던지기 (50%) ==========
+function runCoinGame() {
   const container = document.getElementById('game-container');
-  let myTaps = 0;
-  const oppTaps = Math.floor(Math.random() * 15) + 20;
-  let timeLeft = 10;
-  let running = false;
+  const result = Math.random() < 0.5 ? '앞' : '뒤';
 
   container.innerHTML = `
-    <div class="game-title">👆 탭 속도</div>
-    <p style="text-align:center;">10초 안에 더 많이 탭하세요!</p>
-    <div class="score-display">탭: <span id="tap-count">0</span></div>
-    <div class="tap-big" id="tap-btn">탭!</div>
-    <p id="tap-timer" style="text-align:center;font-size:1.5rem;">준비...</p>
+    <div class="game-title">🪙 동전 던지기</div>
+    <p class="warning-banner">앞/뒤 중 선택! 50% 확률</p>
+    <div class="rps-buttons" style="margin:2rem 0;">
+      <button class="rps-btn" data-choice="앞">앞</button>
+      <button class="rps-btn" data-choice="뒤">뒤</button>
+    </div>
+    <p id="coin-msg" style="text-align:center;"></p>
   `;
 
-  const tapBtn = document.getElementById('tap-btn');
-  const countEl = document.getElementById('tap-count');
-  const timerEl = document.getElementById('tap-timer');
+  container.querySelectorAll('.rps-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const choice = btn.dataset.choice;
+      const won = choice === result;
+      document.getElementById('coin-msg').innerHTML = `결과: ${result}! ${won ? '✅ 승리' : '❌ 패배'}`;
+      container.querySelectorAll('.rps-btn').forEach(b => b.disabled = true);
+      setTimeout(() => onGameEnd(won ? '승리' : '패배'), 1200);
+    });
+  });
+}
+
+// ========== 게임 3: 행운 숫자 (10%) ==========
+function runLuckyNumGame() {
+  const container = document.getElementById('game-container');
+  const answer = Math.floor(Math.random() * 10) + 1;
+
+  container.innerHTML = `
+    <div class="game-title">🎲 행운 숫자</div>
+    <p class="warning-banner">1~10 중 선택! 10% 확률로 정답</p>
+    <div class="rps-buttons" style="flex-wrap:wrap;gap:0.5rem;margin:1.5rem 0;">
+      ${[1,2,3,4,5,6,7,8,9,10].map(n => `<button class="rps-btn" data-num="${n}" style="min-width:50px;">${n}</button>`).join('')}
+    </div>
+    <p id="num-msg" style="text-align:center;"></p>
+  `;
+
+  container.querySelectorAll('[data-num]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const n = parseInt(btn.dataset.num, 10);
+      const won = n === answer;
+      document.getElementById('num-msg').innerHTML = `정답: ${answer}! ${won ? '✅ 승리' : '❌ 패배'}`;
+      container.querySelectorAll('[data-num]').forEach(b => b.disabled = true);
+      setTimeout(() => onGameEnd(won ? '승리' : '패배'), 1200);
+    });
+  });
+}
+
+// ========== 게임 4: 행운 탭 (탭당 40% 확률) ==========
+function runLuckyTapGame() {
+  const container = document.getElementById('game-container');
+  let score = 0;
+  let taps = 0;
+  const TARGET_TAPS = 5;
+
+  container.innerHTML = `
+    <div class="game-title">👆 행운 탭</div>
+    <p class="warning-banner">${TARGET_TAPS}번 탭! 각 탭 40% 확률로 성공</p>
+    <div class="score-display">성공: <span id="tap-score">0</span> / ${TARGET_TAPS}</div>
+    <div class="tap-big" id="lucky-tap">탭!</div>
+    <p id="tap-msg" style="text-align:center;"></p>
+  `;
+
+  const tapBtn = document.getElementById('lucky-tap');
+  const scoreEl = document.getElementById('tap-score');
 
   tapBtn.addEventListener('click', () => {
-    if (!running) {
-      running = true;
-      const iv = setInterval(() => {
-        timeLeft--;
-        timerEl.textContent = `${timeLeft}초`;
-        if (timeLeft <= 0) {
-          clearInterval(iv);
-          tapBtn.style.pointerEvents = 'none';
-          const won = myTaps > oppTaps;
-          timerEl.textContent = `끝! 나: ${myTaps} vs AI: ${oppTaps}`;
-          setTimeout(() => onGameEnd(won ? '승리' : '패배'), 1500);
-        }
-      }, 1000);
+    if (taps >= TARGET_TAPS) return;
+    taps++;
+    if (Math.random() < 0.4) score++;
+    scoreEl.textContent = score;
+    if (taps >= TARGET_TAPS) {
+      const aiScore = Math.floor(Math.random() * (TARGET_TAPS + 1));
+      const won = score > aiScore || (score === aiScore && Math.random() < 0.5);
+      document.getElementById('tap-msg').innerHTML = `끝! 나: ${score} vs AI: ${aiScore} → ${won ? '✅ 승리' : '❌ 패배'}`;
+      tapBtn.style.pointerEvents = 'none';
+      setTimeout(() => onGameEnd(won ? '승리' : '패배'), 1500);
     }
-    myTaps++;
-    countEl.textContent = myTaps;
   });
 }
 
-// ========== 게임: 숫자 맞추기 ==========
-function runNumberGame() {
+// ========== 게임 5: 운 룰렛 (4칸, 50% 승리) ==========
+function runRouletteGame() {
   const container = document.getElementById('game-container');
-  const answer = Math.floor(Math.random() * 100) + 1;
-  let low = 1;
-  let high = 100;
-  let myTurn = true;
+  const outcomes = ['승리', '패배', '승리', '패배'];
+  const result = outcomes[Math.floor(Math.random() * 4)];
 
-  function render() {
-    container.innerHTML = `
-      <div class="game-title">🎲 숫자 맞추기 (1~100)</div>
-      <p style="text-align:center;">범위: ${low} ~ ${high}</p>
-      <div class="number-input-wrap">
-        <input type="number" id="num-input" min="${low}" max="${high}" placeholder="숫자 입력">
-      </div>
-      <button class="quiz-submit" id="num-submit">확인</button>
-      <p id="num-msg" style="text-align:center;margin-top:1rem;color:var(--text-muted);"></p>
-    `;
+  container.innerHTML = `
+    <div class="game-title">🎡 운 룰렛</div>
+    <p class="warning-banner">4칸 중 하나! 50% 승리 확률</p>
+    <div class="rps-buttons" style="margin:2rem 0;">
+      <button class="rps-btn" data-idx="0">1</button>
+      <button class="rps-btn" data-idx="1">2</button>
+      <button class="rps-btn" data-idx="2">3</button>
+      <button class="rps-btn" data-idx="3">4</button>
+    </div>
+    <p id="roulette-msg" style="text-align:center;"></p>
+  `;
 
-    document.getElementById('num-submit').addEventListener('click', () => {
-      const n = parseInt(document.getElementById('num-input').value, 10);
-      const msg = document.getElementById('num-msg');
-      if (isNaN(n) || n < low || n > high) {
-        msg.textContent = '범위 안의 숫자를 입력하세요';
-        return;
-      }
-      if (n === answer) {
-        msg.textContent = '정답!';
-        setTimeout(() => onGameEnd(myTurn ? '승리' : '패배'), 800);
-        return;
-      }
-      if (n < answer) low = n + 1;
-      else high = n - 1;
-      msg.textContent = n < answer ? `업!` : `다운!`;
-
-      myTurn = !myTurn;
-      if (!myTurn) {
-        msg.textContent += ' → AI 차례...';
-        setTimeout(() => {
-          const oppGuess = Math.floor((low + high) / 2);
-          if (oppGuess === answer) {
-            msg.textContent = `AI 정답!`;
-            setTimeout(() => onGameEnd('패배'), 800);
-          } else {
-            if (oppGuess < answer) low = oppGuess + 1;
-            else high = oppGuess - 1;
-            msg.textContent = `AI: ${oppGuess} → 당신 차례`;
-            render();
-          }
-        }, 800);
-      } else render();
+  container.querySelectorAll('[data-idx]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx, 10);
+      const won = outcomes[idx] === '승리';
+      document.getElementById('roulette-msg').innerHTML = `결과: ${outcomes[idx]}! ${won ? '✅ 승리' : '❌ 패배'}`;
+      container.querySelectorAll('[data-idx]').forEach(b => b.disabled = true);
+      setTimeout(() => onGameEnd(won ? '승리' : '패배'), 1200);
     });
-  }
-  render();
-}
-
-// ========== 게임: 리듬 탭 (20초 제한) ==========
-function runRhythmGame() {
-  const container = document.getElementById('game-container');
-  const pan = selectedSide === 'left' ? -1 : 1;
-  const sideLabel = selectedSide === 'left' ? '왼쪽' : '오른쪽';
-  let score = 0;
-  let gameActive = false;
-  let nextBeatTime = 0;
-  const BPM = 90;
-  const beatDuration = 60 / BPM;
-  const GAME_DURATION = 20;
-
-  container.innerHTML = `
-    <div class="game-title">🥁 리듬 탭 - ${sideLabel} 이어폰</div>
-    <div class="warning-banner">20초 동안 비트에 맞춰 탭하세요!</div>
-    <div class="score-display">점수: <span id="rhythm-score">0</span> | <span id="rhythm-timer">${GAME_DURATION}초</span></div>
-    <div class="tap-area ${selectedSide}-bud" id="rhythm-tap">탭!</div>
-  `;
-
-  const tapArea = document.getElementById('rhythm-tap');
-  const scoreEl = document.getElementById('rhythm-score');
-  const timerEl = document.getElementById('rhythm-timer');
-
-  function playBeat() {
-    const freq = selectedSide === 'left' ? 440 : 554;
-    playTone(freq, 0.1, pan, 0.25);
-  }
-
-  let beatIv = null;
-  tapArea.addEventListener('click', () => {
-    if (!gameActive) {
-      gameActive = true;
-      const ctx = initAudio();
-      nextBeatTime = ctx.currentTime + 0.5;
-      beatIv = setInterval(() => {
-        if (!gameActive) { clearInterval(beatIv); return; }
-        if (initAudio().currentTime >= nextBeatTime - 0.01) {
-          playBeat();
-          nextBeatTime += beatDuration;
-        }
-      }, 50);
-      let timeLeft = GAME_DURATION;
-      const timerIv = setInterval(() => {
-        timeLeft--;
-        if (timerEl) timerEl.textContent = `${timeLeft}초`;
-        if (timeLeft <= 0) {
-          clearInterval(timerIv);
-          if (beatIv) clearInterval(beatIv);
-          gameActive = false;
-          if (tapArea) tapArea.style.pointerEvents = 'none';
-          if (timerEl) timerEl.textContent = '끝!';
-          setTimeout(() => onGameEnd(score), 1000);
-        }
-      }, 1000);
-    } else {
-      const ctx = initAudio();
-      const diff = Math.abs(ctx.currentTime - (nextBeatTime - beatDuration));
-      if (diff < beatDuration * 0.4) {
-        score += Math.max(1, Math.round(10 * (1 - diff / beatDuration)));
-        if (scoreEl) scoreEl.textContent = score;
-        tapArea.classList.add('hit');
-        setTimeout(() => tapArea.classList.remove('hit'), 150);
-      }
-    }
   });
 }
 
-// ========== 게임: 스테레오 퀴즈 ==========
-const QUIZ_DATA = [
-  { question: '한국의 수도는?', hint: '청와대가 있는 도시', answer: '서울' },
-  { question: '지구에서 가장 큰 대양?', hint: '아메리카와 아시아 사이', answer: '태평양' },
-  { question: '빛의 삼원색에 없는 색?', hint: '검정, 흰색, 노랑 중', answer: '검정' }
-];
-
-function runQuizGame() {
+// ========== 게임 6: 운 카드 (4장 중 1장, 25%) ==========
+function runLuckyCardGame() {
   const container = document.getElementById('game-container');
-  const q = QUIZ_DATA[currentGameIndex % QUIZ_DATA.length];
-  const isLeft = selectedSide === 'left';
+  const winIdx = Math.floor(Math.random() * 4);
 
   container.innerHTML = `
-    <div class="game-title">🧩 스테레오 퀴즈</div>
-    <div class="warning-banner">각자 정보를 합쳐서 정답을 맞춰보세요!</div>
-    <div class="quiz-question">${isLeft ? `질문: ${q.question}` : '파트너에게서 질문을 들으세요'}</div>
-    <div class="quiz-hint">${!isLeft ? `힌트: ${q.hint}` : '파트너에게서 힌트를 들으세요'}</div>
-    <input type="text" class="quiz-answer-input" id="quiz-answer" placeholder="정답 입력">
-    <button class="quiz-submit" id="quiz-submit">확인</button>
-    <button class="quiz-submit cta-secondary" id="quiz-skip" style="margin-top:0.5rem;">건너뛰기</button>
-    <p id="quiz-result" style="text-align:center;margin-top:1rem;"></p>
+    <div class="game-title">🃏 운 카드</div>
+    <p class="warning-banner">4장 중 1장만 승리! 25% 확률</p>
+    <div class="rps-buttons" style="margin:2rem 0;">
+      <button class="rps-btn" data-idx="0">A</button>
+      <button class="rps-btn" data-idx="1">B</button>
+      <button class="rps-btn" data-idx="2">C</button>
+      <button class="rps-btn" data-idx="3">D</button>
+    </div>
+    <p id="card-msg" style="text-align:center;"></p>
   `;
 
-  document.getElementById('quiz-submit').addEventListener('click', () => {
-    const input = document.getElementById('quiz-answer').value.trim().toLowerCase();
-    const result = document.getElementById('quiz-result');
-    if (input === q.answer.toLowerCase()) {
-      result.innerHTML = '<span style="color:var(--accent-teal)">✅ 정답!</span>';
-      setTimeout(() => onGameEnd('승리'), 1000);
-    } else result.innerHTML = '<span style="color:var(--accent-coral)">❌ 다시 시도</span>';
-  });
-
-  document.getElementById('quiz-skip').addEventListener('click', () => {
-    onGameEnd('패배');
-  });
-}
-
-// ========== 게임: 비밀 메시지 ==========
-const MESSAGE_DATA = [
-  { left: '첫 단어: 사과', right: '둘째 단어: 바나나', answer: '사과바나나' },
-  { left: '앞: 12', right: '뒤: 34', answer: '1234' }
-];
-
-function runMessageGame() {
-  const container = document.getElementById('game-container');
-  const m = MESSAGE_DATA[currentGameIndex % MESSAGE_DATA.length];
-  const isLeft = selectedSide === 'left';
-  const myMsg = isLeft ? m.left : m.right;
-
-  container.innerHTML = `
-    <div class="game-title">📢 비밀 메시지</div>
-    <div class="warning-banner">각자 메시지를 합쳐서 암호를 맞추세요!</div>
-    <div class="message-box ${isLeft ? 'left' : 'right'}">${myMsg}<br><small>파트너에게 전달</small></div>
-    <input type="text" class="quiz-answer-input" id="msg-answer" placeholder="합친 암호 입력">
-    <button class="quiz-submit" id="msg-submit">확인</button>
-    <button class="quiz-submit cta-secondary" id="msg-skip" style="margin-top:0.5rem;">건너뛰기</button>
-    <p id="msg-result" style="text-align:center;margin-top:1rem;"></p>
-  `;
-
-  document.getElementById('msg-submit').addEventListener('click', () => {
-    const input = document.getElementById('msg-answer').value.trim().replace(/\s/g, '');
-    const result = document.getElementById('msg-result');
-    if (input === m.answer.replace(/\s/g, '')) {
-      result.innerHTML = '<span style="color:var(--accent-teal)">✅ 성공!</span>';
-      setTimeout(() => onGameEnd('승리'), 1000);
-    } else result.innerHTML = '<span style="color:var(--accent-coral)">❌ 다시</span>';
-  });
-
-  document.getElementById('msg-skip').addEventListener('click', () => {
-    onGameEnd('패배');
+  container.querySelectorAll('[data-idx]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx, 10);
+      const won = idx === winIdx;
+      document.getElementById('card-msg').innerHTML = `${won ? '✅ 승리!' : '❌ 패배!'} (승리 카드: ${['A','B','C','D'][winIdx]})`;
+      container.querySelectorAll('[data-idx]').forEach(b => b.disabled = true);
+      setTimeout(() => onGameEnd(won ? '승리' : '패배'), 1200);
+    });
   });
 }
 
@@ -429,9 +377,9 @@ function runGame(gameId) {
   const container = document.getElementById('game-container');
   if (container) container.innerHTML = '';
   if (gameId === 'rps') runRpsGame();
-  else if (gameId === 'tap') runTapGame();
-  else if (gameId === 'number') runNumberGame();
-  else if (gameId === 'rhythm') runRhythmGame();
-  else if (gameId === 'quiz') runQuizGame();
-  else if (gameId === 'message') runMessageGame();
+  else if (gameId === 'coin') runCoinGame();
+  else if (gameId === 'luckyNum') runLuckyNumGame();
+  else if (gameId === 'luckyTap') runLuckyTapGame();
+  else if (gameId === 'roulette') runRouletteGame();
+  else if (gameId === 'luckyCard') runLuckyCardGame();
 }

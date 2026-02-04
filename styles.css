@@ -275,6 +275,22 @@ body {
 .result-summary .result-row.lose { border-left: 4px solid var(--accent-coral); }
 .result-summary .result-row.score { border-left: 4px solid var(--accent-gold); }
 
+.email-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+.email-section h3 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+.email-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
 /* Matching */
 .matching-box {
   text-align: center;
