@@ -1,0 +1,12 @@
+{
+  "rules": {
+    "matchPool": {
+      ".read": true,
+      ".write": true
+    },
+    "matchedIds": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}
