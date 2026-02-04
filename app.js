@@ -58,14 +58,15 @@ function getEmailBody() {
 
 사용자 (${sideLabel} 걸고 참여)
 에어팟 기종: ${modelLabel}
+연락처: ${selectedContact || '-'}
+이메일: ${selectedEmail || '-'}
 총 ${winCount}게임 승리 / 6게임 중
 
 상세 결과:
 ${detail}
 
 ---
-이 결과를 모아 왼쪽 vs 오른쪽 승패를 가립니다.
-예) 사용자1(왼쪽) 3승 > 사용자2(오른쪽) 2승`;
+이 결과를 모아 왼쪽 vs 오른쪽 승패를 가립니다.`;
 }
 
 async function sendResultsEmail() {
@@ -81,6 +82,8 @@ async function sendResultsEmail() {
         _captcha: 'false',
         '이어폰': sideLabel,
         '에어팟 기종': MODEL_LABELS[selectedModel] || selectedModel,
+        '연락처': selectedContact || '-',
+        '이메일': selectedEmail || '-',
         '승리수': winCount,
         '결과': body
       })
@@ -107,7 +110,9 @@ function showFinalResults() {
     const statusEl = document.getElementById('email-status');
     if (statusEl) {
       statusEl.innerHTML = success
-        ? `결과가 들어온 순서대로, 같은 기종끼리 자동매칭됩니다, 결과는 이메일로 통보드립니다`
+        ? `결과가 들어온 순서대로, 같은 기종끼리 자동매칭됩니다, 결과는 이메일로 통보드립니다<br><br>
+          <strong>경기도 수원시 장안구 서부로 2066 (16419) 제 2공학관 26310</strong><br>
+          위 주소로 부품을 보내주시면 됩니다. 아래에 본인 정보를 입력한 뒤 제출해 주세요.`
         : `전송에 실패했습니다. 처음 사용 시 해당 이메일로 인증 메일이 발송될 수 있습니다. 인증 후 다시 시도해주세요.`;
     }
   });
@@ -116,6 +121,8 @@ function showFinalResults() {
 // ========== 상태 ==========
 let selectedSide = null;
 let selectedModel = '';
+let selectedContact = '';
+let selectedEmail = '';
 
 const MODEL_LABELS = {
   'airpods-1': 'AirPods (1세대)',
@@ -140,8 +147,20 @@ function init() {
     if (!selectedSide) selectedSide = 'left';
     const modelEl = document.getElementById('airpods-model');
     selectedModel = modelEl?.value || '';
+    const contactEl = document.getElementById('user-contact');
+    const emailEl = document.getElementById('user-email');
+    selectedContact = contactEl?.value?.trim() || '';
+    selectedEmail = emailEl?.value?.trim() || '';
     if (!selectedModel) {
       alert('에어팟 기종을 선택해주세요!');
+      return;
+    }
+    if (!selectedContact) {
+      alert('연락처를 입력해주세요!');
+      return;
+    }
+    if (!selectedEmail) {
+      alert('이메일 주소를 입력해주세요!');
       return;
     }
     gameResults = [];

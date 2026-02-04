@@ -193,6 +193,42 @@ body {
   border-color: var(--accent-teal);
 }
 
+.contact-info {
+  margin-top: 1.5rem;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.contact-info h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-muted);
+}
+
+.contact-input {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  font-size: 1rem;
+  font-family: inherit;
+  background: var(--bg-deep);
+  border: 1px solid var(--bg-elevated);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+}
+
+.contact-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.contact-input:focus {
+  outline: none;
+  border-color: var(--accent-teal);
+}
+
 /* Section visibility */
 .section {
   display: block;
