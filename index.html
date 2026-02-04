@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>한쪽씩 매칭 | 에어팟 내기 매칭</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Noto+Sans+KR:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="noise-overlay"></div>
+  
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">🎧</span>
+      <h1>한쪽씩 매칭</h1>
+      <span class="tagline">에어팟 한쪽 걸고 상대 찾기</span>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- 1. 랜딩 / 매칭 진입 -->
+    <section id="landing" class="section">
+      <div class="hero">
+        <p class="hero-text">
+          에어팟 한쪽 잃어버렸죠?<br>
+          <strong>같은 처지의 상대</strong>와 매칭해서<br>
+          <strong>내기에 걸고</strong> 게임으로 승부하세요.
+        </p>
+        <p class="hero-sub">이기면 상대 에어팟까지 받아 한 쌍 완성! 지면... 한쪽도 잃습니다.</p>
+      </div>
+
+      <div class="bud-selector">
+        <h3>내기가 될 당신의 에어팟은?</h3>
+        <div class="bud-buttons">
+          <button class="bud-btn left" data-side="left">
+            <span class="bud-emoji">🎧</span>
+            <span>왼쪽 한쪽</span>
+          </button>
+          <button class="bud-btn right" data-side="right">
+            <span class="bud-emoji">🎧</span>
+            <span>오른쪽 한쪽</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="model-selector">
+        <h3>에어팟 기종</h3>
+        <select id="airpods-model" class="model-select">
+          <option value="">기종 선택</option>
+          <option value="airpods-1">AirPods (1세대)</option>
+          <option value="airpods-2">AirPods (2세대)</option>
+          <option value="airpods-3">AirPods (3세대)</option>
+          <option value="airpods-pro-1">AirPods Pro (1세대)</option>
+          <option value="airpods-pro-2-lightning">AirPods Pro (2세대, Lightning)</option>
+          <option value="airpods-pro-2-usbc">AirPods Pro (2세대, USB-C)</option>
+        </select>
+      </div>
+
+      <button class="cta-button" id="match-btn">
+        <span>내 에어팟 한쪽 걸고 매칭하기</span>
+      </button>
+    </section>
+
+    <!-- 2. 매칭 대기 -->
+    <section id="matching" class="section hidden">
+      <div class="matching-box" id="matching-loading">
+        <div class="matching-pulse"></div>
+        <p>상대 찾는 중...</p>
+        <p class="matching-sub">반대쪽 + 같은 기종의 상대를 찾고 있어요</p>
+      </div>
+      <div class="matching-waiting hidden" id="matching-waiting">
+        <div class="matching-pulse"></div>
+        <p>대기 중...</p>
+        <p class="matching-sub">반대쪽 + 같은 기종의 사용자가 매칭하면 연결돼요</p>
+        <button class="cta-button cta-secondary" id="cancel-match-btn">매칭 취소</button>
+      </div>
+      <div class="matching-fail hidden" id="matching-fail">
+        <div class="fail-emoji">😢</div>
+        <p class="fail-title">매칭 실패</p>
+        <p class="fail-sub">반대쪽을 선택하고 같은 기종을 찾는 상대가 없어요.<br>잠시 후 다시 시도해주세요.</p>
+        <button class="cta-button" id="retry-match-btn">다시 매칭하기</button>
+      </div>
+    </section>
+
+    <!-- 3. 매칭 완료 → 게임 선택 -->
+    <section id="matched" class="section hidden">
+      <div class="matched-header">
+        <p class="matched-title">매칭 완료!</p>
+        <p class="matched-opponent"><span id="opponent-name">상대방</span>과 대결합니다</p>
+      </div>
+      <div class="game-choice">
+        <h3>대결할 게임을 선택하세요</h3>
+        <div class="games-grid">
+          <article class="game-card" data-game="rps">
+            <div class="game-icon">✊✋✌️</div>
+            <h3>가위바위보</h3>
+            <p>3판 2선승</p>
+          </article>
+          <article class="game-card" data-game="tap">
+            <div class="game-icon">👆</div>
+            <h3>탭 속도 대결</h3>
+            <p>10초 안에 더 많이!</p>
+          </article>
+          <article class="game-card" data-game="number">
+            <div class="game-icon">🎲</div>
+            <h3>숫자 맞추기</h3>
+            <p>1~100 사이 추측</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. 게임 진행 -->
+    <section id="game-play" class="section hidden">
+      <div id="game-container"></div>
+    </section>
+
+    <!-- 5. 결과 -->
+    <section id="result" class="section hidden">
+      <div id="result-container"></div>
+      <button class="cta-button" id="play-again-btn">다시 매칭하기</button>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>🎵 한쪽씩 매칭 - 에어팟 한쪽 걸고 내기하는 매칭 플랫폼</p>
+  </footer>
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="firebase-pool.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
