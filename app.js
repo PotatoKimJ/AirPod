@@ -192,15 +192,13 @@ function runRpsGame() {
 
   function render() {
     container.innerHTML = `
-      <div class="game-title">✊✋✌️ 가위바위보 (운)</div>
-      <p class="warning-banner">AI가 랜덤으로 냅니다. 3판 2선승!</p>
-      <div class="rps-score"><span>나: ${myScore}</span><span>vs</span><span>AI: ${oppScore}</span></div>
+      <div class="game-title">✊✋✌️ 가위바위보</div>
+      <p class="warning-banner">선택하세요</p>
       <div class="rps-buttons">
         <button class="rps-btn" data-choice="rock">✊</button>
         <button class="rps-btn" data-choice="paper">✋</button>
         <button class="rps-btn" data-choice="scissors">✌️</button>
       </div>
-      <p id="rps-round" style="text-align:center;color:var(--text-muted);"></p>
     `;
 
     container.querySelectorAll('.rps-btn').forEach(btn => {
@@ -211,11 +209,8 @@ function runRpsGame() {
         if (result === 1) myScore++;
         else if (result === -1) oppScore++;
 
-        const roundEl = document.getElementById('rps-round');
-        roundEl.textContent = result === 0 ? '비겼다!' : result === 1 ? `이겼다!` : `졌다...`;
-
-        if (myScore >= 2) setTimeout(() => onGameEnd('승리'), 800);
-        else if (oppScore >= 2) setTimeout(() => onGameEnd('패배'), 800);
+        if (myScore >= 2) setTimeout(() => onGameEnd('승리'), 400);
+        else if (oppScore >= 2) setTimeout(() => onGameEnd('패배'), 400);
         else render();
       });
     });
@@ -230,21 +225,19 @@ function runCoinGame() {
 
   container.innerHTML = `
     <div class="game-title">🪙 동전 던지기</div>
-    <p class="warning-banner">앞/뒤 중 선택! 50% 확률</p>
+    <p class="warning-banner">앞 또는 뒤를 선택하세요</p>
     <div class="rps-buttons" style="margin:2rem 0;">
       <button class="rps-btn" data-choice="앞">앞</button>
       <button class="rps-btn" data-choice="뒤">뒤</button>
     </div>
-    <p id="coin-msg" style="text-align:center;"></p>
   `;
 
   container.querySelectorAll('.rps-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const choice = btn.dataset.choice;
       const won = choice === result;
-      document.getElementById('coin-msg').innerHTML = `결과: ${result}! ${won ? '✅ 승리' : '❌ 패배'}`;
       container.querySelectorAll('.rps-btn').forEach(b => b.disabled = true);
-      setTimeout(() => onGameEnd(won ? '승리' : '패배'), 1200);
+      setTimeout(() => onGameEnd(won ? '승리' : '패배'), 500);
     });
   });
 }
@@ -256,20 +249,18 @@ function runLuckyNumGame() {
 
   container.innerHTML = `
     <div class="game-title">🎲 행운 숫자</div>
-    <p class="warning-banner">1~10 중 선택! 10% 확률로 정답</p>
+    <p class="warning-banner">1~10 중 선택하세요</p>
     <div class="rps-buttons" style="flex-wrap:wrap;gap:0.5rem;margin:1.5rem 0;">
       ${[1,2,3,4,5,6,7,8,9,10].map(n => `<button class="rps-btn" data-num="${n}" style="min-width:50px;">${n}</button>`).join('')}
     </div>
-    <p id="num-msg" style="text-align:center;"></p>
   `;
 
   container.querySelectorAll('[data-num]').forEach(btn => {
     btn.addEventListener('click', () => {
       const n = parseInt(btn.dataset.num, 10);
       const won = n === answer;
-      document.getElementById('num-msg').innerHTML = `정답: ${answer}! ${won ? '✅ 승리' : '❌ 패배'}`;
       container.querySelectorAll('[data-num]').forEach(b => b.disabled = true);
-      setTimeout(() => onGameEnd(won ? '승리' : '패배'), 1200);
+      setTimeout(() => onGameEnd(won ? '승리' : '패배'), 500);
     });
   });
 }
@@ -283,26 +274,21 @@ function runLuckyTapGame() {
 
   container.innerHTML = `
     <div class="game-title">👆 행운 탭</div>
-    <p class="warning-banner">${TARGET_TAPS}번 탭! 각 탭 40% 확률로 성공</p>
-    <div class="score-display">성공: <span id="tap-score">0</span> / ${TARGET_TAPS}</div>
+    <p class="warning-banner">버튼을 5번 탭하세요</p>
     <div class="tap-big" id="lucky-tap">탭!</div>
-    <p id="tap-msg" style="text-align:center;"></p>
   `;
 
   const tapBtn = document.getElementById('lucky-tap');
-  const scoreEl = document.getElementById('tap-score');
 
   tapBtn.addEventListener('click', () => {
     if (taps >= TARGET_TAPS) return;
     taps++;
     if (Math.random() < 0.4) score++;
-    scoreEl.textContent = score;
     if (taps >= TARGET_TAPS) {
       const aiScore = Math.floor(Math.random() * (TARGET_TAPS + 1));
       const won = score > aiScore || (score === aiScore && Math.random() < 0.5);
-      document.getElementById('tap-msg').innerHTML = `끝! 나: ${score} vs AI: ${aiScore} → ${won ? '✅ 승리' : '❌ 패배'}`;
       tapBtn.style.pointerEvents = 'none';
-      setTimeout(() => onGameEnd(won ? '승리' : '패배'), 1500);
+      setTimeout(() => onGameEnd(won ? '승리' : '패배'), 500);
     }
   });
 }
@@ -315,23 +301,21 @@ function runRouletteGame() {
 
   container.innerHTML = `
     <div class="game-title">🎡 운 룰렛</div>
-    <p class="warning-banner">4칸 중 하나! 50% 승리 확률</p>
+    <p class="warning-banner">1~4 중 선택하세요</p>
     <div class="rps-buttons" style="margin:2rem 0;">
       <button class="rps-btn" data-idx="0">1</button>
       <button class="rps-btn" data-idx="1">2</button>
       <button class="rps-btn" data-idx="2">3</button>
       <button class="rps-btn" data-idx="3">4</button>
     </div>
-    <p id="roulette-msg" style="text-align:center;"></p>
   `;
 
   container.querySelectorAll('[data-idx]').forEach(btn => {
     btn.addEventListener('click', () => {
       const idx = parseInt(btn.dataset.idx, 10);
       const won = outcomes[idx] === '승리';
-      document.getElementById('roulette-msg').innerHTML = `결과: ${outcomes[idx]}! ${won ? '✅ 승리' : '❌ 패배'}`;
       container.querySelectorAll('[data-idx]').forEach(b => b.disabled = true);
-      setTimeout(() => onGameEnd(won ? '승리' : '패배'), 1200);
+      setTimeout(() => onGameEnd(won ? '승리' : '패배'), 500);
     });
   });
 }
@@ -343,23 +327,21 @@ function runLuckyCardGame() {
 
   container.innerHTML = `
     <div class="game-title">🃏 운 카드</div>
-    <p class="warning-banner">4장 중 1장만 승리! 25% 확률</p>
+    <p class="warning-banner">A~D 중 선택하세요</p>
     <div class="rps-buttons" style="margin:2rem 0;">
       <button class="rps-btn" data-idx="0">A</button>
       <button class="rps-btn" data-idx="1">B</button>
       <button class="rps-btn" data-idx="2">C</button>
       <button class="rps-btn" data-idx="3">D</button>
     </div>
-    <p id="card-msg" style="text-align:center;"></p>
   `;
 
   container.querySelectorAll('[data-idx]').forEach(btn => {
     btn.addEventListener('click', () => {
       const idx = parseInt(btn.dataset.idx, 10);
       const won = idx === winIdx;
-      document.getElementById('card-msg').innerHTML = `${won ? '✅ 승리!' : '❌ 패배!'} (승리 카드: ${['A','B','C','D'][winIdx]})`;
       container.querySelectorAll('[data-idx]').forEach(b => b.disabled = true);
-      setTimeout(() => onGameEnd(won ? '승리' : '패배'), 1200);
+      setTimeout(() => onGameEnd(won ? '승리' : '패배'), 500);
     });
   });
 }
