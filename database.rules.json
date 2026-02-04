@@ -1,0 +1,12 @@
+{
+  "rules": {
+    "ghostWaiting": {
+      ".read": true,
+      ".write": true
+    },
+    "ghostMatches": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}
