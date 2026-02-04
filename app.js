@@ -5,28 +5,8 @@ const RESULT_EMAIL = 'ekfmfmd2412@gmail.com';
 const sections = {
   landing: document.getElementById('landing'),
   gamePlay: document.getElementById('game-play'),
-  result: document.getElementById('result'),
-  waiting: document.getElementById('waiting')
+  result: document.getElementById('result')
 };
-
-function useFirebase() {
-  return typeof FIREBASE_ENABLED !== 'undefined' && FIREBASE_ENABLED &&
-    typeof firebase !== 'undefined' && firebaseConfig?.apiKey && !firebaseConfig.apiKey.includes('YOUR_');
-}
-
-function getFirebaseDb() {
-  if (!useFirebase()) return null;
-  try {
-    if (!window._firebaseDb) {
-      firebase.initializeApp(firebaseConfig);
-      window._firebaseDb = firebase.database();
-    }
-    return window._firebaseDb;
-  } catch (e) {
-    console.error('Firebase init error:', e);
-    return null;
-  }
-}
 
 function showSection(name) {
   Object.keys(sections).forEach(key => {
@@ -88,124 +68,7 @@ ${detail}
 예) 사용자1(왼쪽) 3승 > 사용자2(오른쪽) 2승`;
 }
 
-async function sendMatchEmail(playerA, playerB, winnerId) {
-  const body = `[고스트 매칭 결과]
-
-플레이어 A (${playerA.sideLabel}, ${playerA.modelLabel})
-- 승리: ${playerA.winCount}게임
-- 상세: ${playerA.results.map(r => `${r.name}:${r.result === '승리' ? '승' : '패'}`).join(', ')}
-
-플레이어 B (${playerB.sideLabel}, ${playerB.modelLabel})
-- 승리: ${playerB.winCount}게임
-- 상세: ${playerB.results.map(r => `${r.name}:${r.result === '승리' ? '승' : '패'}`).join(', ')}
-
-=== 승자: ${winnerId === playerA.id ? '플레이어 A' : '플레이어 B'} ===`;
-
-  try {
-    const res = await fetch(`https://formsubmit.co/ajax/${RESULT_EMAIL}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({
-        _subject: `[한쪽씩 고스트매칭] ${playerA.winCount}승 vs ${playerB.winCount}승`,
-        _captcha: 'false',
-        '매칭결과': body
-      })
-    });
-    const data = await res.json();
-    return data.success;
-  } catch (e) {
-    console.error('이메일 전송 실패:', e);
-    return false;
-  }
-}
-
-async function submitToGhostPool() {
-  const db = getFirebaseDb();
-  if (!db) return false;
-
-  const myId = 'g' + Date.now() + '-' + Math.random().toString(36).slice(2);
-  const winCount = gameResults.filter(r => r.result === '승리').length;
-  const oppositeSide = selectedSide === 'left' ? 'right' : 'left';
-
-  const me = {
-    id: myId,
-    side: selectedSide,
-    model: selectedModel,
-    winCount,
-    results: [...gameResults],
-    timestamp: Date.now()
-  };
-
-  await db.ref('ghostWaiting/' + myId).set(me);
-
-  const snap = await db.ref('ghostWaiting').once('value');
-  const pool = snap.val() || {};
-  const entries = Object.entries(pool)
-    .filter(([k, v]) => k !== myId && v.side === oppositeSide && v.model === selectedModel)
-    .map(([k, v]) => ({ id: k, ...v }));
-
-  if (entries.length > 0) {
-    const opp = entries[0];
-    await db.ref('ghostWaiting/' + myId).remove();
-    await db.ref('ghostWaiting/' + opp.id).remove();
-
-    const aWin = me.winCount > opp.winCount || (me.winCount === opp.winCount && Math.random() < 0.5);
-    const winnerId = aWin ? myId : opp.id;
-
-    const playerA = aWin ? me : opp;
-    const playerB = aWin ? opp : me;
-    playerA.sideLabel = playerA.side === 'left' ? '왼쪽 이어폰' : '오른쪽 이어폰';
-    playerB.sideLabel = playerB.side === 'left' ? '왼쪽 이어폰' : '오른쪽 이어폰';
-    playerA.modelLabel = MODEL_LABELS[playerA.model] || playerA.model;
-    playerB.modelLabel = MODEL_LABELS[playerB.model] || playerB.model;
-
-    await sendMatchEmail(playerA, playerB, winnerId);
-    await db.ref('ghostMatches/' + myId).set({ matched: true });
-    await db.ref('ghostMatches/' + opp.id).set({ matched: true });
-    return true;
-  }
-  return { myId };
-}
-
-function showFinalResults() {
-  if (useFirebase()) {
-    showSection('waiting');
-    submitToGhostPool().then(async (result) => {
-      if (result === true) {
-        showMatchedScreen();
-      } else if (result && result.myId) {
-        const db = getFirebaseDb();
-        db.ref('ghostMatches/' + result.myId).on('value', snap => {
-          if (snap.val()?.matched) {
-            db.ref('ghostMatches/' + result.myId).off();
-            db.ref('ghostMatches/' + result.myId).remove();
-            showMatchedScreen();
-          }
-        });
-        window.addEventListener('beforeunload', () => {
-          db.ref('ghostWaiting/' + result.myId).remove();
-        });
-      } else {
-        showFallbackResult();
-      }
-    });
-  } else {
-    showFallbackResult();
-  }
-}
-
-function showMatchedScreen() {
-  showSection('result');
-  document.getElementById('result-container').innerHTML = `
-    <div class="result-win">
-      <div class="result-emoji">🎉</div>
-      <p class="result-text">매칭 완료</p>
-      <p class="result-sub">결과는 ${RESULT_EMAIL} 로 전송되었습니다.</p>
-    </div>
-  `;
-}
-
-async function sendSingleResultEmail() {
+async function sendResultsEmail() {
   const sideLabel = selectedSide === 'left' ? '왼쪽 이어폰' : '오른쪽 이어폰';
   const winCount = gameResults.filter(r => r.result === '승리').length;
   const body = getEmailBody();
@@ -225,11 +88,12 @@ async function sendSingleResultEmail() {
     const data = await res.json();
     return data.success;
   } catch (e) {
+    console.error('이메일 전송 실패:', e);
     return false;
   }
 }
 
-function showFallbackResult() {
+function showFinalResults() {
   showSection('result');
   const container = document.getElementById('result-container');
   container.innerHTML = `
@@ -239,12 +103,12 @@ function showFallbackResult() {
       <p id="email-status" class="result-sub">결과를 ${RESULT_EMAIL} 로 전송 중...</p>
     </div>
   `;
-  sendSingleResultEmail().then(success => {
+  sendResultsEmail().then(success => {
     const statusEl = document.getElementById('email-status');
     if (statusEl) {
       statusEl.innerHTML = success
-        ? `결과가 ${RESULT_EMAIL} 로 전송되었습니다.<br>(Firebase 설정 시 고스트 매칭 활성화)`
-        : `전송 실패.`;
+        ? `결과가 ${RESULT_EMAIL} 로 전송되었습니다.<br>결과는 이메일에서 확인해주세요.`
+        : `전송 실패. 처음 사용 시 해당 이메일로 FormSubmit 인증 메일이 갈 수 있어요. 인증 후 다시 시도해주세요.`;
     }
   });
 }

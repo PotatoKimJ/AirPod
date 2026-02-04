@@ -60,8 +60,7 @@
 
       <div class="games-section">
         <h2>6가지 게임을 연속으로 진행합니다</h2>
-        <p class="games-desc">모든 게임은 100% 운(확률) 기반!</p>
-        <p class="games-desc" style="font-size:0.85rem;color:var(--accent-teal);">고스트 매칭: 6게임 후 상대를 찾는 중... 나중에 참여한 상대와 자동 매칭!</p>
+        <p class="games-desc">모든 게임은 100% 운(확률) 기반! 가위바위보 → 동전 던지기 → 행운 숫자 → 행운 탭 → 운 룰렛 → 운 카드</p>
         <button class="cta-button" id="start-all-btn">전체 게임 시작</button>
       </div>
     </section>
@@ -73,19 +72,10 @@
       <div id="game-container"></div>
     </section>
 
-    <!-- 결과 / 대기 / 매칭완료 -->
+    <!-- 결과 -->
     <section id="result" class="section hidden">
       <div id="result-container"></div>
       <button class="cta-button" id="play-again-btn">다시 하기</button>
-    </section>
-
-    <!-- 고스트 매칭 대기 (상대 찾는 중) -->
-    <section id="waiting" class="section hidden">
-      <div class="matching-box">
-        <div class="matching-pulse"></div>
-        <p>상대 찾는 중...</p>
-        <p class="matching-sub">같은 기종의 반대쪽 사용자가 참여하면 자동으로 매칭됩니다</p>
-      </div>
     </section>
   </main>
 
@@ -93,9 +83,6 @@
       <p>🎵 한쪽씩 - 에어팟 한쪽 걸고 내기하는 게임</p>
   </footer>
 
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-  <script src="firebase-config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
