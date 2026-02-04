@@ -7,40 +7,53 @@ const sections = {
 
 function showSection(name) {
   Object.keys(sections).forEach(key => {
-    sections[key].classList.toggle('hidden', key !== name);
+    const el = sections[key];
+    if (el) el.classList.toggle('hidden', key !== name);
   });
 }
 
 // ========== 상태 ==========
 let selectedSide = null;
 
-document.querySelectorAll('.bud-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.bud-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    selectedSide = btn.dataset.side;
+function init() {
+  document.querySelectorAll('.bud-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.bud-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedSide = btn.dataset.side;
+    });
   });
-});
 
-// ========== 게임 선택 ==========
-document.querySelectorAll('.game-card').forEach(card => {
-  card.addEventListener('click', () => {
-    const gameId = card.dataset.game;
-    const needSide = ['rhythm', 'quiz', 'message'].includes(gameId);
-    if (needSide && !selectedSide) {
-      alert('내기에 걸 이어팟(왼쪽/오른쪽)을 먼저 선택해주세요!');
-      return;
-    }
-    showSection('game-play');
-    runGame(gameId);
+  document.querySelectorAll('.game-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const gameId = card.dataset.game;
+      const needSide = ['rhythm', 'quiz', 'message'].includes(gameId);
+      if (needSide && !selectedSide) selectedSide = 'left'; // 미선택 시 기본 왼쪽
+      showSection('gamePlay');
+      runGame(gameId);
+    });
   });
-});
 
-// 뒤로가기
-document.getElementById('back-btn').addEventListener('click', () => {
-  showSection('landing');
-  document.getElementById('game-container').innerHTML = '';
-});
+  const backBtn = document.getElementById('back-btn');
+  if (backBtn) backBtn.addEventListener('click', () => {
+    showSection('landing');
+    const gc = document.getElementById('game-container');
+    if (gc) gc.innerHTML = '';
+  });
+
+  const playAgainBtn = document.getElementById('play-again-btn');
+  if (playAgainBtn) playAgainBtn.addEventListener('click', () => {
+    showSection('landing');
+    const rc = document.getElementById('result-container');
+    if (rc) rc.innerHTML = '';
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
 
 // ========== 결과 ==========
 function endGame(won) {
@@ -65,10 +78,6 @@ function endGame(won) {
   }
 }
 
-document.getElementById('play-again-btn').addEventListener('click', () => {
-  showSection('landing');
-  document.getElementById('result-container').innerHTML = '';
-});
 
 // ========== 오디오 ==========
 let audioCtx = null;
