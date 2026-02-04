@@ -46,45 +46,16 @@
       </div>
 
       <div class="games-section">
-        <h2>게임 선택</h2>
-        <div class="games-grid">
-          <article class="game-card" data-game="rps">
-            <div class="game-icon">✊✋✌️</div>
-            <h3>가위바위보</h3>
-            <p>AI와 3판 2선승</p>
-          </article>
-          <article class="game-card" data-game="tap">
-            <div class="game-icon">👆</div>
-            <h3>탭 속도</h3>
-            <p>10초 안에 더 많이!</p>
-          </article>
-          <article class="game-card" data-game="number">
-            <div class="game-icon">🎲</div>
-            <h3>숫자 맞추기</h3>
-            <p>1~100 사이 추측</p>
-          </article>
-          <article class="game-card" data-game="rhythm">
-            <div class="game-icon">🥁</div>
-            <h3>리듬 탭</h3>
-            <p>비트에 맞춰 탭하기</p>
-          </article>
-          <article class="game-card" data-game="quiz">
-            <div class="game-icon">🧩</div>
-            <h3>스테레오 퀴즈</h3>
-            <p>한쪽은 질문, 한쪽은 힌트 (2인)</p>
-          </article>
-          <article class="game-card" data-game="message">
-            <div class="game-icon">📢</div>
-            <h3>비밀 메시지</h3>
-            <p>각자 다른 힌트 합쳐 맞추기 (2인)</p>
-          </article>
-        </div>
+        <h2>6가지 게임을 연속으로 진행합니다</h2>
+        <p class="games-desc">가위바위보 → 탭 속도 → 숫자 맞추기 → 리듬 탭 → 스테레오 퀴즈 → 비밀 메시지</p>
+        <button class="cta-button" id="start-all-btn">전체 게임 시작</button>
       </div>
     </section>
 
     <!-- 게임 진행 -->
     <section id="game-play" class="section hidden">
-      <button class="back-btn" id="back-btn">← 게임 선택</button>
+      <div class="game-progress" id="game-progress">1/6</div>
+      <button class="back-btn" id="back-btn">← 중단하기</button>
       <div id="game-container"></div>
     </section>
 
