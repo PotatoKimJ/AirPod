@@ -227,6 +227,21 @@ body {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
+.back-btn {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.back-btn:hover {
+  color: var(--accent-teal);
+}
+
 /* Matching */
 .matching-box {
   text-align: center;
