@@ -1,6 +1,5 @@
 // ========== 설정 ==========
-// Formspree 사용 시: https://formspree.io 에서 폼 생성 후 ID 입력
-const FORMSPREE_FORM_ID = ''; // 예: 'xrgweqab'
+const RESULT_EMAIL = 'ekfmfmd2412@gmail.com'; // 게임 결과 자동 전송 주소
 
 // ========== 섹션 전환 ==========
 const sections = {
@@ -67,6 +66,32 @@ ${detail}
 예) 사용자1(왼쪽) 3승 > 사용자2(오른쪽) 2승`;
 }
 
+async function sendResultsEmail() {
+  const sideLabel = selectedSide === 'left' ? '왼쪽 이어폰' : '오른쪽 이어폰';
+  const winCount = gameResults.filter(r => r.result === '승리').length;
+  const body = getEmailBody();
+  const subject = `[한쪽씩] ${sideLabel} - ${winCount}게임 승리`;
+
+  try {
+    const res = await fetch(`https://formsubmit.co/ajax/${RESULT_EMAIL}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        _subject: subject,
+        _captcha: 'false',
+        '이어폰': sideLabel,
+        '승리수': winCount,
+        '결과': body
+      })
+    });
+    const data = await res.json();
+    return data.success;
+  } catch (e) {
+    console.error('이메일 전송 실패:', e);
+    return false;
+  }
+}
+
 function showFinalResults() {
   showSection('result');
   const container = document.getElementById('result-container');
@@ -95,48 +120,16 @@ function showFinalResults() {
     </div>
     <div class="result-summary">${rowsHtml}</div>
     <div class="email-section">
-      <h3>결과 이메일로 보내기 (취합용)</h3>
-      <p class="email-desc">받는 이메일 주소를 입력하고 전송하면, 상대 결과와 비교해 승패를 가릴 수 있어요.</p>
-      <input type="email" class="quiz-answer-input" id="email-to" placeholder="받는 이메일 주소">
-      <button class="quiz-submit" id="email-send-btn">이메일로 결과 보내기</button>
-      <p id="email-status" style="text-align:center;margin-top:0.5rem;font-size:0.9rem;color:var(--text-muted);"></p>
+      <p id="email-status">결과를 ${RESULT_EMAIL} 로 전송 중...</p>
     </div>
   `;
 
-  document.getElementById('email-send-btn').addEventListener('click', async () => {
-    const email = document.getElementById('email-to').value.trim();
+  sendResultsEmail().then(success => {
     const statusEl = document.getElementById('email-status');
-    if (!email) {
-      statusEl.textContent = '이메일 주소를 입력해주세요.';
-      return;
-    }
-
-    const body = getEmailBody();
-    const subject = `[한쪽씩] ${sideLabel} - ${winCount}게임 승리`;
-
-    if (FORMSPREE_FORM_ID) {
-      statusEl.textContent = '전송 중...';
-      try {
-        const res = await fetch(`https://formspree.io/f/${FORMSPREE_FORM_ID}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            _replyto: email,
-            _subject: subject,
-            이어폰: sideLabel,
-            승리수: winCount,
-            상세결과: body
-          })
-        });
-        if (res.ok) statusEl.innerHTML = '<span style="color:var(--accent-teal)">✅ 전송 완료!</span>';
-        else throw new Error();
-      } catch {
-        statusEl.innerHTML = '<span style="color:var(--accent-coral)">전송 실패. 아래 메일 보내기를 사용해주세요.</span>';
-      }
-    } else {
-      const mailto = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      window.location.href = mailto;
-      statusEl.innerHTML = '<span style="color:var(--accent-teal)">이메일 앱이 열렸어요. 전송 버튼을 눌러주세요.</span>';
+    if (statusEl) {
+      statusEl.innerHTML = success
+        ? `<span style="color:var(--accent-teal)">✅ 결과가 ${RESULT_EMAIL} 로 전송되었습니다!</span>`
+        : `<span style="color:var(--accent-coral)">전송 실패. 처음 사용 시 해당 이메일로 FormSubmit 인증 메일이 갈 수 있어요. 인증 후 다시 시도해주세요.</span>`;
     }
   });
 }
